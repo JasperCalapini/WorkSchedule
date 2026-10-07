@@ -1,25 +1,27 @@
-# Gig Mileage Log
+# Gig Log (iPhone app)
 
-A simple, offline-friendly web app to record delivery gig shifts (DoorDash, Amazon Flex, Uber Eats, etc.) and business miles for taxes.
+Native iOS app (SwiftUI + SwiftData) to record delivery gig shifts — DoorDash, Amazon Flex, Uber Eats, etc. — and business miles for taxes.
 
 ## Features
-- **Quick start/end shift** – tap to start, enter odometer, tap to end.
-- **Manual entry** – add or edit past shifts (date, times, odometer, miles, earnings, tips, notes).
-- **Multiple platforms** – DoorDash, Amazon Flex and more; add your own.
-- **Tax summary** – yearly miles, estimated mileage deduction (IRS standard rate), income, hours, by platform and month.
-- **CSV export** – mileage log for your tax preparer / Schedule C.
-- **Backup/restore** – JSON file. Data is stored only on your device (localStorage).
+- **Start / end a shift** with one tap; live timer while you drive.
+- **Odometer → miles** calculated automatically (or type miles in).
+- **Earnings & tips** per shift, plus notes.
+- **Multiple platforms**; add, remove, reorder in Settings.
+- **Tax summary** per year: business miles, mileage deduction (IRS standard rate), income, hours — by platform and by month.
+- **CSV export** of your mileage log (date, miles, business purpose) via the iOS share sheet — email it, save to Files, etc.
+- Data stays on your iPhone and is included in your iCloud/device backup.
 
-## Run
-No build needed. Open `index.html`, or serve the folder:
+## Install on your iPhone
+Requires a Mac with **Xcode 16 or newer** (free from the Mac App Store). iPhone must run iOS 17+.
 
-```
-python3 -m http.server 8000
-```
+1. Clone this repo on your Mac and open `GigLog.xcodeproj`.
+2. Xcode → Settings → Accounts → sign in with your Apple ID.
+3. Select the **GigLog** target → *Signing & Capabilities* → pick your Team. If the bundle ID is taken, change it (e.g. `com.yourname.giglog`).
+4. Plug in your iPhone, select it as the run destination, press **Run** (▶).
+5. On the iPhone: Settings → General → VPN & Device Management → trust your developer certificate. On iOS 16+, also enable Settings → Privacy & Security → **Developer Mode**.
 
-Then visit http://localhost:8000. On a phone, use "Add to Home Screen" to install it like an app.
-To host for free, enable **GitHub Pages** on this repo (Settings → Pages → deploy from branch).
+With a free Apple ID the app must be re-installed from Xcode every 7 days. A paid Apple Developer account ($99/yr) removes that limit and lets you use TestFlight or the App Store.
 
 ## Notes
-- IRS rates are prefilled (2023–2026) — verify each year at irs.gov and edit in Settings.
-- Not tax advice. Keep the exported log with your records.
+- IRS rates are prefilled for 2023–2026 — verify at irs.gov and edit in Settings.
+- Not tax advice.
