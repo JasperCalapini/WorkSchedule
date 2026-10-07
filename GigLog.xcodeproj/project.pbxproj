@@ -177,7 +177,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gig Log";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Gig Log uses your location during a shift to count business miles for your taxes.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Gig Log uses your location during a shift to count business miles for your taxes, even while you use other apps.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -203,7 +206,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gig Log";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Gig Log uses your location during a shift to count business miles for your taxes.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Gig Log uses your location during a shift to count business miles for your taxes, even while you use other apps.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

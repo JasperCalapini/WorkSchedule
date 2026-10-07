@@ -10,7 +10,6 @@ struct SummaryView: View {
     private var years: [Int] {
         Set(allShifts.map(\.year) + [Calendar.current.component(.year, from: .now)]).sorted(by: >)
     }
-    private var rate: Double { mileageRate(for: year, in: rates) }
 
     var body: some View {
         NavigationStack {
@@ -20,13 +19,16 @@ struct SummaryView: View {
                 }
 
                 let t = Totals(shifts)
-                Section("\(String(year)) totals") {
+                Section {
                     LabeledContent("Business miles", value: t.miles.oneDecimal)
-                    LabeledContent("Mileage deduction", value: (t.miles * rate).currency)
-                    LabeledContent("Rate used", value: "$\(rate.formatted()) / mi")
+                    LabeledContent("Mileage deduction", value: mileageDeduction(shifts, rates: rates).currency)
                     LabeledContent("Gross income", value: t.income.currency)
                     LabeledContent("Hours worked", value: t.hours.oneDecimal)
                     LabeledContent("Shifts", value: String(t.count))
+                } header: {
+                    Text("\(String(year)) totals")
+                } footer: {
+                    Text("Each shift uses the IRS rate in effect on its date (see Settings).")
                 }
 
                 if !shifts.isEmpty {
@@ -45,7 +47,7 @@ struct SummaryView: View {
 
                 Section {
                     ShareLink(item: CSVFile(name: "mileage-log-\(year).csv",
-                                            text: CSVExport.make(shifts: shifts, year: year, rate: rate)),
+                                            text: CSVExport.make(shifts: shifts, rates: rates)),
                               preview: SharePreview("Mileage log \(String(year))")) {
                         Label("Export CSV for taxes", systemImage: "square.and.arrow.up")
                     }

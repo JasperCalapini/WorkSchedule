@@ -4,7 +4,8 @@ Native iOS app (SwiftUI + SwiftData) to record delivery gig shifts — DoorDash,
 
 ## Features
 - **Start / end a shift** with one tap; live timer while you drive.
-- **Odometer → miles** calculated automatically (or type miles in).
+- **GPS mileage tracking** during a shift, even while you use DoorDash/Flex in the foreground. Counts all miles while working, not just the platform's "active" miles.
+- **Odometer backup** — enter start/end odometer as a fallback; miles fill in automatically (or type them in).
 - **Earnings & tips** per shift, plus notes.
 - **Multiple platforms**; add, remove, reorder in Settings.
 - **Tax summary** per year: business miles, mileage deduction (IRS standard rate), income, hours — by platform and by month.
@@ -23,5 +24,6 @@ Requires a Mac with **Xcode 16 or newer** (free from the Mac App Store). iPhone 
 With a free Apple ID the app must be re-installed from Xcode every 7 days. A paid Apple Developer account ($99/yr) removes that limit and lets you use TestFlight or the App Store.
 
 ## Notes
-- IRS rates are prefilled for 2023–2026 — verify at irs.gov and edit in Settings.
+- IRS rates are stored by effective date (2026 changed mid-year: 72.5¢ Jan–Jun, 76¢ Jul–Dec). Verify at irs.gov and edit in Settings.
+- GPS: allow location access when asked. A blue location pill shows while tracking; it stops when you end the shift.
 - Not tax advice.

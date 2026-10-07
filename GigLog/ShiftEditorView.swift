@@ -28,7 +28,10 @@ struct ShiftEditorView: View {
         _end = State(initialValue: shift?.end ?? .now)
         _odometerStart = State(initialValue: text(shift?.odometerStart))
         _odometerEnd = State(initialValue: text(shift?.odometerEnd))
-        _miles = State(initialValue: (shift?.miles ?? 0) == 0 ? "" : text(shift?.miles))
+        // When ending a GPS-tracked shift, start with the GPS miles.
+        let gps = shift?.gpsMiles.map { ($0 * 10).rounded() / 10 }
+        let initialMiles = shift?.isActive == true ? gps : shift?.miles
+        _miles = State(initialValue: (initialMiles ?? 0) == 0 ? "" : text(initialMiles))
         _earnings = State(initialValue: money(shift?.earnings))
         _tips = State(initialValue: money(shift?.tips))
         _notes = State(initialValue: shift?.notes ?? "")
@@ -59,11 +62,16 @@ struct ShiftEditorView: View {
                 Section {
                     numberField("Start odometer", $odometerStart)
                     numberField("End odometer", $odometerEnd)
+                    if let gps = shift?.gpsMiles {
+                        LabeledContent("GPS miles") {
+                            Button("\(gps.oneDecimal) – use") { miles = String((gps * 10).rounded() / 10) }
+                        }
+                    }
                     numberField("Business miles", $miles)
                 } header: {
                     Text("Mileage")
                 } footer: {
-                    Text("Miles fill in from the odometer, or type them directly.")
+                    Text("Business miles fill in from GPS or the odometer. You can also type them in.")
                 }
                 Section("Pay") {
                     numberField("Earnings ($)", $earnings)
@@ -100,6 +108,7 @@ struct ShiftEditorView: View {
     }
 
     private func save() {
+        let wasActive = isEnding
         let target = shift ?? Shift(platform: platform)
         target.platform = platform
         target.start = start
@@ -111,6 +120,7 @@ struct ShiftEditorView: View {
         target.tips = parseNumber(tips) ?? 0
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if shift == nil { context.insert(target) }
+        if wasActive { LocationTracker.shared.stop() }
         dismiss()
     }
 }

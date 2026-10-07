@@ -13,6 +13,8 @@ final class Shift {
     var earnings: Double = 0
     var tips: Double = 0
     var notes: String = ""
+    /// Miles counted by GPS; nil when GPS tracking wasn't used for this shift.
+    var gpsMiles: Double?
 
     init(platform: String, start: Date = .now, end: Date? = nil,
          odometerStart: Double? = nil, odometerEnd: Double? = nil,
@@ -48,22 +50,24 @@ final class Platform {
     }
 }
 
-/// IRS standard mileage rate in dollars per mile for a tax year.
+/// IRS standard mileage rate in dollars per mile, in effect from a given date.
 @Model
 final class MileageRate {
-    @Attribute(.unique) var year: Int
+    var effectiveFrom: Date
     var rate: Double
 
-    init(year: Int, rate: Double) {
-        self.year = year
+    init(effectiveFrom: Date, rate: Double) {
+        self.effectiveFrom = effectiveFrom
         self.rate = rate
     }
 }
 
 enum Defaults {
     static let platforms = ["DoorDash", "Amazon Flex", "Uber Eats", "Grubhub", "Instacart", "Walmart Spark"]
-    // Verify each year at irs.gov; editable in Settings.
-    static let rates: [Int: Double] = [2023: 0.655, 2024: 0.67, 2025: 0.70, 2026: 0.725]
+    // Verify at irs.gov; editable in Settings. 2026 changed mid-year.
+    static let rates: [(year: Int, month: Int, rate: Double)] = [
+        (2023, 1, 0.655), (2024, 1, 0.67), (2025, 1, 0.70), (2026, 1, 0.725), (2026, 7, 0.76)
+    ]
 
     static func seed(_ context: ModelContext) {
         let platformCount = (try? context.fetchCount(FetchDescriptor<Platform>())) ?? 0
@@ -74,16 +78,21 @@ enum Defaults {
         }
         let rateCount = (try? context.fetchCount(FetchDescriptor<MileageRate>())) ?? 0
         if rateCount == 0 {
-            for (year, rate) in rates {
-                context.insert(MileageRate(year: year, rate: rate))
+            for r in rates {
+                let date = Calendar.current.date(from: DateComponents(year: r.year, month: r.month, day: 1)) ?? .now
+                context.insert(MileageRate(effectiveFrom: date, rate: r.rate))
             }
         }
     }
 }
 
-/// Rate for the given year, or the most recent earlier year if not set.
-func mileageRate(for year: Int, in rates: [MileageRate]) -> Double {
-    rates.filter { $0.year <= year }.max { $0.year < $1.year }?.rate ?? 0
+/// The rate in effect on the given date.
+func mileageRate(on date: Date, in rates: [MileageRate]) -> Double {
+    rates.filter { $0.effectiveFrom <= date }.max { $0.effectiveFrom < $1.effectiveFrom }?.rate ?? 0
+}
+
+func mileageDeduction(_ shifts: [Shift], rates: [MileageRate]) -> Double {
+    shifts.reduce(0) { $0 + $1.miles * mileageRate(on: $1.start, in: rates) }
 }
 
 func parseNumber(_ text: String) -> Double? {

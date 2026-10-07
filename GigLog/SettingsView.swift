@@ -4,10 +4,10 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Platform.sortOrder) private var platforms: [Platform]
-    @Query(sort: \MileageRate.year, order: .reverse) private var rates: [MileageRate]
+    @Query(sort: \MileageRate.effectiveFrom, order: .reverse) private var rates: [MileageRate]
 
     @State private var newPlatform = ""
-    @State private var newYear = ""
+    @State private var newRateDate = Date.now
     @State private var newRate = ""
 
     var body: some View {
@@ -26,18 +26,19 @@ struct SettingsView: View {
 
                 Section {
                     ForEach(rates) { r in
-                        LabeledContent(String(r.year), value: "$\(r.rate.formatted()) / mi")
+                        LabeledContent("From \(r.effectiveFrom.formatted(date: .abbreviated, time: .omitted))",
+                                       value: "$\(r.rate.formatted()) / mi")
                     }
                     .onDelete { offsets in for i in offsets { context.delete(rates[i]) } }
+                    DatePicker("Effective from", selection: $newRateDate, displayedComponents: .date)
                     HStack {
-                        TextField("Year", text: $newYear).keyboardType(.numberPad)
                         TextField("Rate (e.g. 0.70)", text: $newRate).keyboardType(.decimalPad)
                         Button("Set", action: setRate)
                     }
                 } header: {
                     Text("IRS mileage rate")
                 } footer: {
-                    Text("Standard mileage rate per mile. Check irs.gov each year and update here.")
+                    Text("IRS standard mileage rate per mile. Check irs.gov each year; the IRS sometimes changes it mid-year.")
                 }
             }
             .navigationTitle("Settings")
@@ -59,13 +60,13 @@ struct SettingsView: View {
     }
 
     private func setRate() {
-        guard let year = Int(newYear), let rate = parseNumber(newRate) else { return }
-        if let existing = rates.first(where: { $0.year == year }) {
+        guard let rate = parseNumber(newRate) else { return }
+        let day = Calendar.current.startOfDay(for: newRateDate)
+        if let existing = rates.first(where: { $0.effectiveFrom == day }) {
             existing.rate = rate
         } else {
-            context.insert(MileageRate(year: year, rate: rate))
+            context.insert(MileageRate(effectiveFrom: day, rate: rate))
         }
-        newYear = ""
         newRate = ""
     }
 }
