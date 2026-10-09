@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Query(sort: \Platform.sortOrder) private var platforms: [Platform]
     @Query(sort: \MileageRate.effectiveFrom, order: .reverse) private var rates: [MileageRate]
 
+    @AppStorage("setAsidePercent") private var setAsidePercent = Defaults.setAsidePercent
     @State private var newPlatform = ""
     @State private var newRateDate = Date.now
     @State private var newRate = ""
@@ -13,6 +14,23 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Stepper(value: $setAsidePercent, in: 0...50, step: 1) {
+                        LabeledContent("Set aside", value: "\(setAsidePercent)%")
+                    }
+                    LabeledContent("iCloud sync") {
+                        if FileManager.default.ubiquityIdentityToken != nil {
+                            Label("Signed in", systemImage: "checkmark.icloud")
+                        } else {
+                            Label("Not signed in", systemImage: "icloud.slash")
+                        }
+                    }
+                } header: {
+                    Text("Taxes & sync")
+                } footer: {
+                    Text("Profit × this % = what the Taxes tab tells you to save. 25–30% is typical. iCloud sync works once it's turned on for the app (see README).")
+                }
+
                 Section("Platforms") {
                     ForEach(platforms) { Text($0.name) }
                         .onDelete { offsets in for i in offsets { context.delete(platforms[i]) } }

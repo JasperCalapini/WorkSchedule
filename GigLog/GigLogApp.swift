@@ -7,6 +7,6 @@ struct GigLogApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [Shift.self, Platform.self, MileageRate.self])
+        .modelContainer(for: [Shift.self, Expense.self, PlatformPayout.self, Platform.self, MileageRate.self])
     }
 }

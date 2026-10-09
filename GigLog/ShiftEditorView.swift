@@ -15,6 +15,11 @@ struct ShiftEditorView: View {
     @State private var odometerStart: String
     @State private var odometerEnd: String
     @State private var miles: String
+    @State private var commute: String
+    /// Total driven (GPS or odometer) that business miles are worked out from.
+    @State private var totalDriven: Double?
+    @State private var startPhoto: Data?
+    @State private var endPhoto: Data?
     @State private var earnings: String
     @State private var tips: String
     @State private var notes: String
@@ -32,6 +37,10 @@ struct ShiftEditorView: View {
         let gps = shift?.gpsMiles.map { ($0 * 10).rounded() / 10 }
         let initialMiles = shift?.isActive == true ? gps : shift?.miles
         _miles = State(initialValue: (initialMiles ?? 0) == 0 ? "" : text(initialMiles))
+        _commute = State(initialValue: shift?.commuteMiles.fieldText ?? "")
+        _totalDriven = State(initialValue: shift?.isActive == true ? gps : shift.map { $0.miles + $0.commuteMiles })
+        _startPhoto = State(initialValue: shift?.odometerStartPhoto)
+        _endPhoto = State(initialValue: shift?.odometerEndPhoto)
         _earnings = State(initialValue: money(shift?.earnings))
         _tips = State(initialValue: money(shift?.tips))
         _notes = State(initialValue: shift?.notes ?? "")
@@ -40,7 +49,7 @@ struct ShiftEditorView: View {
     private var isEnding: Bool { shift?.isActive == true }
     private var title: String { shift == nil ? "New Shift" : (isEnding ? "End Shift" : "Edit Shift") }
     private var platformNames: [String] {
-        var names = platforms.map(\.name)
+        var names = uniqueNames(platforms)
         if !platform.isEmpty && !names.contains(platform) { names.append(platform) }
         return names
     }
@@ -64,14 +73,23 @@ struct ShiftEditorView: View {
                     numberField("End odometer", $odometerEnd)
                     if let gps = shift?.gpsMiles {
                         LabeledContent("GPS miles") {
-                            Button("\(gps.oneDecimal) – use") { miles = String((gps * 10).rounded() / 10) }
+                            Button("\(gps.oneDecimal) – use") {
+                                totalDriven = gps
+                                recompute()
+                            }
                         }
                     }
+                    numberField("Commute / personal miles", $commute)
                     numberField("Business miles", $miles)
+                        .fontWeight(.semibold)
                 } header: {
                     Text("Mileage")
                 } footer: {
-                    Text("Business miles fill in from GPS or the odometer. You can also type them in.")
+                    Text("Business miles = total driven (GPS or odometer) − commute. Logging the commute leg separately lets your tax preparer decide if it counts.")
+                }
+                Section("Odometer photos") {
+                    PhotoField(title: "Start photo", data: $startPhoto)
+                    PhotoField(title: "End photo", data: $endPhoto)
                 }
                 Section("Pay") {
                     numberField("Earnings ($)", $earnings)
@@ -89,6 +107,7 @@ struct ShiftEditorView: View {
             }
             .onChange(of: odometerStart) { autoMiles() }
             .onChange(of: odometerEnd) { autoMiles() }
+            .onChange(of: commute) { recompute() }
             .onAppear { if platform.isEmpty { platform = platforms.first?.name ?? "" } }
         }
     }
@@ -103,8 +122,15 @@ struct ShiftEditorView: View {
 
     private func autoMiles() {
         if let s = parseNumber(odometerStart), let e = parseNumber(odometerEnd), e >= s {
-            miles = String(((e - s) * 10).rounded() / 10)
+            totalDriven = e - s
+            recompute()
         }
+    }
+
+    private func recompute() {
+        guard let total = totalDriven else { return }
+        let business = max(0, total - (parseNumber(commute) ?? 0))
+        miles = String((business * 10).rounded() / 10)
     }
 
     private func save() {
@@ -116,6 +142,9 @@ struct ShiftEditorView: View {
         target.odometerStart = parseNumber(odometerStart)
         target.odometerEnd = parseNumber(odometerEnd)
         target.miles = parseNumber(miles) ?? 0
+        target.commuteMiles = parseNumber(commute) ?? 0
+        target.odometerStartPhoto = startPhoto
+        target.odometerEndPhoto = endPhoto
         target.earnings = parseNumber(earnings) ?? 0
         target.tips = parseNumber(tips) ?? 0
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -9,6 +9,8 @@ struct ShiftListView: View {
 
     @State private var startPlatform = ""
     @State private var startOdometer = ""
+    @State private var startPhoto: Data?
+    @State private var period: Period = .week
     @State private var editing: Shift?
     @State private var addingNew = false
     private var tracker: LocationTracker { .shared }
@@ -19,17 +21,20 @@ struct ShiftListView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section { PeriodStatsView(shifts: completed, period: $period) }
+
                 if let active = activeShift {
                     activeSection(active)
                 } else {
                     Section {
                         Picker("Platform", selection: $startPlatform) {
-                            ForEach(platforms) { Text($0.name).tag($0.name) }
+                            ForEach(uniqueNames(platforms), id: \.self) { Text($0).tag($0) }
                         }
                         Toggle("Track miles with GPS", isOn: $useGPS)
                         TextField(useGPS ? "Start odometer (backup, optional)" : "Start odometer",
                                   text: $startOdometer)
                             .keyboardType(.decimalPad)
+                        PhotoField(title: "Odometer photo", data: $startPhoto)
                         Button("Start shift now", action: startShift)
                             .buttonStyle(.borderedProminent)
                             .frame(maxWidth: .infinity)
@@ -38,7 +43,7 @@ struct ShiftListView: View {
                         Text("Start a shift")
                     } footer: {
                         if useGPS {
-                            Text("GPS keeps counting while you use other apps. Entering the odometer too gives you a backup.")
+                            Text("GPS keeps counting while you use other apps. The odometer and a photo of it are your backup proof.")
                         }
                     }
                 }
@@ -108,9 +113,11 @@ struct ShiftListView: View {
 
     private func startShift() {
         let shift = Shift(platform: startPlatform, odometerStart: parseNumber(startOdometer))
+        shift.odometerStartPhoto = startPhoto
         context.insert(shift)
         if useGPS { tracker.start(for: shift) }
         startOdometer = ""
+        startPhoto = nil
     }
 }
 
@@ -129,5 +136,53 @@ struct ShiftRow: View {
             Spacer()
             Text(shift.income.currency).font(.headline)
         }
+    }
+}
+
+enum Period: String, CaseIterable, Identifiable {
+    case week = "This week"
+    case month = "This month"
+    var id: String { rawValue }
+}
+
+/// Earnings, hours and miles for the current week or month, plus $/hour and $/mile.
+struct PeriodStatsView: View {
+    let shifts: [Shift]
+    @Binding var period: Period
+
+    private var inPeriod: [Shift] {
+        let component: Calendar.Component = period == .week ? .weekOfYear : .month
+        return shifts.filter { Calendar.current.isDate($0.start, equalTo: .now, toGranularity: component) }
+    }
+
+    var body: some View {
+        let t = Totals(inPeriod)
+        VStack(spacing: 12) {
+            Picker("Period", selection: $period) {
+                ForEach(Period.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+                GridRow {
+                    stat("Earned", t.income.currency)
+                    stat("Hours", t.hours.oneDecimal)
+                    stat("Business mi", t.miles.oneDecimal)
+                }
+                GridRow {
+                    stat("Per hour", t.hours > 0 ? (t.income / t.hours).currency : "–")
+                    stat("Per mile", t.miles > 0 ? (t.income / t.miles).currency : "–")
+                    stat("Shifts", String(t.count))
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func stat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.headline).monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

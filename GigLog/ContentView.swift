@@ -9,8 +9,10 @@ struct ContentView: View {
         TabView {
             ShiftListView()
                 .tabItem { Label("Shifts", systemImage: "car.fill") }
+            ExpensesView()
+                .tabItem { Label("Expenses", systemImage: "receipt") }
             SummaryView()
-                .tabItem { Label("Tax Summary", systemImage: "doc.text.magnifyingglass") }
+                .tabItem { Label("Taxes", systemImage: "doc.text.magnifyingglass") }
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
