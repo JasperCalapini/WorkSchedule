@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
 
-// All models keep a default value (or are optional) for every property and avoid
-// unique constraints, so they can sync through iCloud (CloudKit).
+// Every property has a default value (or is optional) so new fields can be added
+// later without breaking existing data.
 
 @Model
 final class Shift {
@@ -148,7 +148,7 @@ enum Defaults {
     }
 }
 
-/// Platform names in order, without duplicates (two synced devices may both seed defaults).
+/// Platform names in order, without duplicates.
 func uniqueNames(_ platforms: [Platform]) -> [String] {
     var seen = Set<String>()
     return platforms.map(\.name).filter { seen.insert($0).inserted }

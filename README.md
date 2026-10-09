@@ -13,7 +13,6 @@ Native iOS app (SwiftUI + SwiftData) to record delivery gig shifts — DoorDash,
 - **Platform payouts** — enter each app's 1099 / annual total and compare with your log.
 - **CSV export** of shifts and expenses via the share sheet.
 - **Dark mode** (follows the iPhone setting).
-- **iCloud sync** ready (see below).
 
 ## Install on your iPhone
 Requires a Mac with **Xcode 16 or newer** (free from the Mac App Store). iPhone must run iOS 17+.
@@ -26,18 +25,8 @@ Requires a Mac with **Xcode 16 or newer** (free from the Mac App Store). iPhone 
 
 With a free Apple ID the app must be re-installed from Xcode every 7 days. A paid Apple Developer account ($99/yr) removes that limit and lets you use TestFlight or the App Store.
 
-## Turn on iCloud sync (optional)
-Requires a paid Apple Developer account ($99/yr). Syncs between devices signed in to the same Apple ID.
-
-1. In Xcode, select the **GigLog** target → **Signing & Capabilities** → **+ Capability** → **iCloud**.
-2. Tick **CloudKit**, then under Containers click **+** and add `iCloud.<your bundle id>` (e.g. `iCloud.com.jasper.giglog`).
-3. **+ Capability** → **Background Modes** → tick **Remote notifications**.
-4. Run the app again. Data (including photos) now syncs automatically.
-
-Without these steps the app works the same, storing data only on the phone.
-
 ## Notes
 - IRS rates are stored by effective date (2026 changed mid-year: 72.5¢ Jan–Jun, 76¢ Jul–Dec). Verify at irs.gov and edit in Settings.
 - GPS: allow location access when asked. A blue location pill shows while tracking; it stops when you end the shift.
-- Photos are stored inside the app (not your Photos library), shrunk to ~200–300 KB each. With iCloud sync on they're included and count toward your iCloud storage.
+- Photos are stored inside the app (not your Photos library), shrunk to ~200–300 KB each. Data stays on your iPhone and is included in your normal iPhone/iCloud backup.
 - Not tax advice.
