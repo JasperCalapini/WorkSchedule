@@ -15,6 +15,9 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var backgroundSession: CLBackgroundActivitySession?
     private var lastLocation: CLLocation?
+    /// Route points not yet written to the shift (saved in batches to avoid constant rewrites).
+    private var pendingPoints: [RoutePoint] = []
+    private var recordsRoute: Bool { UserDefaults.standard.object(forKey: "recordRoute") as? Bool ?? true }
 
     private static let metersPerMile = 1609.344
     private static let maxAccuracy = 50.0      // ignore fixes worse than 50 m
@@ -44,6 +47,7 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
     }
 
     func stop() {
+        flushRoute()
         manager.stopUpdatingLocation()
         backgroundSession?.invalidate()
         backgroundSession = nil
@@ -57,6 +61,7 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
             guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= Self.maxAccuracy else { continue }
             guard let last = lastLocation else {
                 lastLocation = location
+                record(location)
                 continue
             }
             let meters = location.distance(from: last)
@@ -65,9 +70,22 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
             let seconds = location.timestamp.timeIntervalSince(last.timestamp)
             if seconds > 0 && meters / seconds <= Self.maxSpeed {
                 shift.gpsMiles = (shift.gpsMiles ?? 0) + meters / Self.metersPerMile
+                record(location)
             }
             lastLocation = location
         }
+    }
+
+    private func record(_ location: CLLocation) {
+        guard recordsRoute else { return }
+        pendingPoints.append(RoutePoint(location))
+        if pendingPoints.count >= 20 { flushRoute() }
+    }
+
+    private func flushRoute() {
+        guard let shift, !pendingPoints.isEmpty else { return }
+        shift.routeData = (shift.routeData ?? Data()) + RoutePoint.encode(pendingPoints)
+        pendingPoints.removeAll()
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

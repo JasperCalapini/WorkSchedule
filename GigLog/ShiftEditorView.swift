@@ -87,6 +87,11 @@ struct ShiftEditorView: View {
                 } footer: {
                     Text("Business miles = total driven (GPS or odometer) − commute. Logging the commute leg separately lets your tax preparer decide if it counts.")
                 }
+                if let shift, shift.hasRoute {
+                    Section("Route") {
+                        RoutePreviewLink(shift: shift)
+                    }
+                }
                 Section("Odometer photos") {
                     PhotoField(title: "Start photo", data: $startPhoto)
                     PhotoField(title: "End photo", data: $endPhoto)

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Query(sort: \MileageRate.effectiveFrom, order: .reverse) private var rates: [MileageRate]
 
     @AppStorage("setAsidePercent") private var setAsidePercent = Defaults.setAsidePercent
+    @AppStorage("recordRoute") private var recordRoute = true
     @State private var newPlatform = ""
     @State private var newRateDate = Date.now
     @State private var newRate = ""
@@ -22,6 +23,14 @@ struct SettingsView: View {
                     Text("Taxes")
                 } footer: {
                     Text("Profit × this % = what the Taxes tab tells you to save. 25–30% is typical.")
+                }
+
+                Section {
+                    Toggle("Save route map", isOn: $recordRoute)
+                } header: {
+                    Text("GPS")
+                } footer: {
+                    Text("Saves where you drove during GPS-tracked shifts so you can review it on a map. Stored only on this iPhone, about 100–300 KB per shift.")
                 }
 
                 Section("Platforms") {

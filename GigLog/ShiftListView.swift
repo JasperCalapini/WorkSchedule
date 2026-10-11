@@ -91,6 +91,9 @@ struct ShiftListView: View {
                     Text("Start odometer: \(odo.oneDecimal)").foregroundStyle(.secondary)
                 }
             }
+            if active.hasRoute {
+                RoutePreviewLink(shift: active)
+            }
             if active.gpsMiles != nil && tracker.isDenied {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Location access is off, so GPS can't count miles. Turn it on, or enter your odometer when you end the shift.")
@@ -134,6 +137,11 @@ struct ShiftRow: View {
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
+            if shift.hasRoute {
+                Image(systemName: "map")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Has route")
+            }
             Text(shift.income.currency).font(.headline)
         }
     }

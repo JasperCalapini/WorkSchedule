@@ -23,6 +23,8 @@ final class Shift {
     var gpsMiles: Double?
     @Attribute(.externalStorage) var odometerStartPhoto: Data?
     @Attribute(.externalStorage) var odometerEndPhoto: Data?
+    /// GPS route recorded during the shift (see RoutePoint.encode).
+    @Attribute(.externalStorage) var routeData: Data?
 
     init(platform: String, start: Date = .now, end: Date? = nil,
          odometerStart: Double? = nil, odometerEnd: Double? = nil,
