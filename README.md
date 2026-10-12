@@ -6,6 +6,7 @@ Native iOS app (SwiftUI + SwiftData) to record delivery gig shifts — DoorDash,
 - **Start / end a shift** with one tap; live timer while you drive.
 - **GPS mileage tracking** during a shift, even while you use DoorDash/Flex in the foreground. Counts all miles while working, not just the platform's "active" miles.
 - **Route map** — see where you drove on each GPS-tracked shift (can be turned off in Settings).
+- **Personal errand mode** — tap during a shift; GPS keeps recording but those miles count as personal and show as a dashed orange line on the map.
 - **Odometer backup + photos** — start/end odometer readings and photos as proof.
 - **Commute miles** logged separately from business miles (not deducted).
 - **This week / this month** stats: earnings, hours, miles, $/hour, $/mile.

@@ -10,7 +10,7 @@ enum CSVExport {
         let money: (Double) -> String = { String(format: "%.2f", $0) }
 
         var rows = [["Date", "Platform", "Start", "End", "Hours", "Odometer Start", "Odometer End",
-                     "GPS Miles", "Commute Miles", "Business Miles", "IRS Rate", "Mileage Deduction",
+                     "Business GPS Miles", "Personal/Commute Miles", "Business Miles", "IRS Rate", "Mileage Deduction",
                      "Earnings", "Tips", "Business Purpose", "Notes"]]
         for s in shifts.sorted(by: { $0.start < $1.start }) {
             let rate = mileageRate(on: s.start, in: rates)

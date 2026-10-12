@@ -61,7 +61,7 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
             guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= Self.maxAccuracy else { continue }
             guard let last = lastLocation else {
                 lastLocation = location
-                record(location)
+                record(location, personal: shift.isPersonal)
                 continue
             }
             let meters = location.distance(from: last)
@@ -69,16 +69,21 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
             if meters < max(10, location.horizontalAccuracy) { continue }
             let seconds = location.timestamp.timeIntervalSince(last.timestamp)
             if seconds > 0 && meters / seconds <= Self.maxSpeed {
-                shift.gpsMiles = (shift.gpsMiles ?? 0) + meters / Self.metersPerMile
-                record(location)
+                let miles = meters / Self.metersPerMile
+                if shift.isPersonal {
+                    shift.personalGPSMiles += miles
+                } else {
+                    shift.gpsMiles = (shift.gpsMiles ?? 0) + miles
+                }
+                record(location, personal: shift.isPersonal)
             }
             lastLocation = location
         }
     }
 
-    private func record(_ location: CLLocation) {
+    private func record(_ location: CLLocation, personal: Bool) {
         guard recordsRoute else { return }
-        pendingPoints.append(RoutePoint(location))
+        pendingPoints.append(RoutePoint(location, isPersonal: personal))
         if pendingPoints.count >= 20 { flushRoute() }
     }
 

@@ -84,8 +84,12 @@ struct ShiftListView: View {
                 Text(active.start, style: .timer)
                     .font(.system(.largeTitle, design: .rounded).monospacedDigit())
                 if let gps = active.gpsMiles {
-                    Label("\(gps.oneDecimal) mi (GPS)", systemImage: "location.fill")
+                    Label("\(gps.oneDecimal) business mi", systemImage: "location.fill")
                         .font(.title3)
+                    if active.personalGPSMiles > 0 || active.isPersonal {
+                        Label("\(active.personalGPSMiles.oneDecimal) personal mi", systemImage: "cart.fill")
+                            .foregroundStyle(RouteStyle.personal)
+                    }
                 }
                 if let odo = active.odometerStart {
                     Text("Start odometer: \(odo.oneDecimal)").foregroundStyle(.secondary)
@@ -102,6 +106,22 @@ struct ShiftListView: View {
                         Link("Open Settings", destination: url).font(.footnote)
                     }
                 }
+            }
+            if active.gpsMiles != nil {
+                if active.isPersonal {
+                    Label("Personal errand — miles are not counted as business", systemImage: "cart.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(RouteStyle.personal)
+                }
+                Button {
+                    active.isPersonal.toggle()
+                } label: {
+                    Label(active.isPersonal ? "Back to work" : "Personal errand",
+                          systemImage: active.isPersonal ? "car.fill" : "cart")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(active.isPersonal ? Color.accentColor : RouteStyle.personal)
             }
             Button("End shift") { editing = active }
                 .buttonStyle(.borderedProminent)

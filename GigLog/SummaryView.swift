@@ -54,7 +54,7 @@ struct SummaryView: View {
                         Text(profit.currency).bold()
                     }
                     LabeledContent("Business miles", value: t.miles.oneDecimal)
-                    LabeledContent("Commute miles (not deducted)",
+                    LabeledContent("Personal / commute miles (not deducted)",
                                    value: shifts.reduce(0) { $0 + $1.commuteMiles }.oneDecimal)
                     LabeledContent("Hours · shifts", value: "\(t.hours.oneDecimal) · \(t.count)")
                 } header: {

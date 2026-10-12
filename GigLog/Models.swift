@@ -19,8 +19,12 @@ final class Shift {
     var earnings: Double = 0
     var tips: Double = 0
     var notes: String = ""
-    /// Miles counted by GPS; nil when GPS tracking wasn't used for this shift.
+    /// Business miles counted by GPS; nil when GPS tracking wasn't used for this shift.
     var gpsMiles: Double?
+    /// Miles counted by GPS while in personal mode (errands).
+    var personalGPSMiles: Double = 0
+    /// True while the driver has switched to personal mode during the shift.
+    var isPersonal: Bool = false
     @Attribute(.externalStorage) var odometerStartPhoto: Data?
     @Attribute(.externalStorage) var odometerEndPhoto: Data?
     /// GPS route recorded during the shift (see RoutePoint.encode).

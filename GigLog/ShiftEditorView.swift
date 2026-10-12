@@ -37,8 +37,14 @@ struct ShiftEditorView: View {
         let gps = shift?.gpsMiles.map { ($0 * 10).rounded() / 10 }
         let initialMiles = shift?.isActive == true ? gps : shift?.miles
         _miles = State(initialValue: (initialMiles ?? 0) == 0 ? "" : text(initialMiles))
-        _commute = State(initialValue: shift?.commuteMiles.fieldText ?? "")
-        _totalDriven = State(initialValue: shift?.isActive == true ? gps : shift.map { $0.miles + $0.commuteMiles })
+        // When ending, personal-mode GPS miles become the commute / personal miles.
+        let personal = shift?.isActive == true
+            ? ((shift?.personalGPSMiles ?? 0) * 10).rounded() / 10
+            : (shift?.commuteMiles ?? 0)
+        _commute = State(initialValue: personal.fieldText)
+        _totalDriven = State(initialValue: shift?.isActive == true
+            ? gps.map { $0 + personal }
+            : shift.map { $0.miles + $0.commuteMiles })
         _startPhoto = State(initialValue: shift?.odometerStartPhoto)
         _endPhoto = State(initialValue: shift?.odometerEndPhoto)
         _earnings = State(initialValue: money(shift?.earnings))
@@ -72,12 +78,17 @@ struct ShiftEditorView: View {
                     numberField("Start odometer", $odometerStart)
                     numberField("End odometer", $odometerEnd)
                     if let gps = shift?.gpsMiles {
-                        LabeledContent("GPS miles") {
+                        LabeledContent("Business GPS miles") {
                             Button("\(gps.oneDecimal) – use") {
-                                totalDriven = gps
+                                let personal = shift?.personalGPSMiles ?? 0
+                                totalDriven = gps + personal
+                                commute = ((personal * 10).rounded() / 10).fieldText
                                 recompute()
                             }
                         }
+                    }
+                    if let personal = shift?.personalGPSMiles, personal > 0 {
+                        LabeledContent("Personal GPS miles", value: personal.oneDecimal)
                     }
                     numberField("Commute / personal miles", $commute)
                     numberField("Business miles", $miles)
@@ -148,6 +159,7 @@ struct ShiftEditorView: View {
         target.odometerEnd = parseNumber(odometerEnd)
         target.miles = parseNumber(miles) ?? 0
         target.commuteMiles = parseNumber(commute) ?? 0
+        target.isPersonal = false
         target.odometerStartPhoto = startPhoto
         target.odometerEndPhoto = endPhoto
         target.earnings = parseNumber(earnings) ?? 0
