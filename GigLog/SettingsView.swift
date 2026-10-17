@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
@@ -8,9 +9,15 @@ struct SettingsView: View {
 
     @AppStorage("setAsidePercent") private var setAsidePercent = Defaults.setAsidePercent
     @AppStorage("recordRoute") private var recordRoute = true
+    @AppStorage("weeklyGoal") private var weeklyGoal = 0.0
+    @AppStorage("requireFaceID") private var requireFaceID = false
     @State private var newPlatform = ""
     @State private var newRateDate = Date.now
     @State private var newRate = ""
+    @State private var backupURL: URL?
+    @State private var importing = false
+    @State private var pendingRestore: Backup?
+    @State private var backupMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -26,11 +33,39 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("Weekly earnings goal") {
+                        TextField("Off", value: $weeklyGoal, format: .currency(code: "USD"))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    Toggle("Require Face ID", isOn: $requireFaceID)
+                } header: {
+                    Text("Goals & privacy")
+                } footer: {
+                    Text("Set a goal to see a progress bar on the Shifts tab (0 turns it off). Face ID keeps your earnings and routes private.")
+                }
+
+                Section {
                     Toggle("Save route map", isOn: $recordRoute)
                 } header: {
                     Text("GPS")
                 } footer: {
                     Text("Saves where you drove during GPS-tracked shifts so you can review it on a map. Stored only on this iPhone, about 100–300 KB per shift.")
+                }
+
+                Section {
+                    if let backupURL {
+                        ShareLink(item: backupURL) {
+                            Label("Save backup file…", systemImage: "square.and.arrow.up")
+                        }
+                    } else {
+                        Button("Create backup", systemImage: "externaldrive", action: makeBackup)
+                    }
+                    Button("Restore from backup…", systemImage: "arrow.counterclockwise") { importing = true }
+                } header: {
+                    Text("Backup")
+                } footer: {
+                    Text("Saves everything (shifts, routes, photos, expenses) to one file. Keep it in Files, iCloud Drive or email it to yourself, then restore it on a new phone.")
                 }
 
                 Section("Platforms") {
@@ -63,6 +98,46 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .toolbar { EditButton() }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+                do {
+                    pendingRestore = try Backup.read(from: result.get())
+                } catch {
+                    backupMessage = "That file isn't a Gig Log backup."
+                }
+            }
+            .confirmationDialog("Replace all data?", isPresented: Binding(
+                get: { pendingRestore != nil }, set: { if !$0 { pendingRestore = nil } }
+            ), titleVisibility: .visible) {
+                Button("Replace with backup", role: .destructive, action: restore)
+            } message: {
+                if let backup = pendingRestore {
+                    Text("Backup from \(backup.created.formatted(date: .abbreviated, time: .shortened)) with \(backup.shifts.count) shifts and \(backup.expenses.count) expenses. Everything currently in the app will be replaced.")
+                }
+            }
+            .alert(backupMessage ?? "", isPresented: Binding(
+                get: { backupMessage != nil }, set: { if !$0 { backupMessage = nil } }
+            )) {}
+        }
+    }
+
+    private func makeBackup() {
+        do {
+            backupURL = try Backup(context: context).writeFile()
+        } catch {
+            backupMessage = "Couldn't create the backup: \(error.localizedDescription)"
+        }
+    }
+
+    private func restore() {
+        guard let backup = pendingRestore else { return }
+        pendingRestore = nil
+        LocationTracker.shared.stop()
+        do {
+            try backup.restore(into: context)
+            backupURL = nil
+            backupMessage = "Backup restored."
+        } catch {
+            backupMessage = "Restore failed: \(error.localizedDescription)"
         }
     }
 

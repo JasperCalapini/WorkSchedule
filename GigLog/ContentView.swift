@@ -25,13 +25,16 @@ struct ContentView: View {
         }
     }
 
-    /// If the app was closed during a GPS-tracked shift, keep tracking when it reopens.
+    /// If the app was closed during a shift, keep tracking and the Lock Screen display going.
     private func resumeGPSIfNeeded() {
+        guard let active = AppData.activeShift() else {
+            LiveActivityController.end()   // clean up a stale Lock Screen display
+            return
+        }
         let tracker = LocationTracker.shared
-        guard !tracker.isTracking else { return }
-        let shifts = (try? context.fetch(FetchDescriptor<Shift>())) ?? []
-        if let active = shifts.first(where: { $0.isActive && $0.gpsMiles != nil }) {
+        if !tracker.isTracking && active.gpsMiles != nil {
             tracker.start(for: active)
         }
+        LiveActivityController.start(for: active)
     }
 }

@@ -166,7 +166,7 @@ struct ShiftEditorView: View {
         target.tips = parseNumber(tips) ?? 0
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if shift == nil { context.insert(target) }
-        if wasActive { LocationTracker.shared.stop() }
+        if wasActive { ShiftControl.finished() }
         dismiss()
     }
 }

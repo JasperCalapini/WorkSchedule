@@ -10,6 +10,7 @@ struct SummaryView: View {
     @AppStorage("setAsidePercent") private var setAsidePercent = Defaults.setAsidePercent
     @State private var year = Calendar.current.component(.year, from: .now)
     @State private var editingPayout: PayoutTarget?
+    @State private var reportURL: URL?
 
     private var shifts: [Shift] { allShifts.filter { !$0.isActive && $0.year == year } }
     private var expenses: [Expense] { allExpenses.filter { $0.year == year } }
@@ -75,6 +76,14 @@ struct SummaryView: View {
                         Text("Enter what each app reports for the year (1099 or annual summary). If yours differs, report the platform’s number or ask your tax preparer.")
                     }
 
+                    Section {
+                        NavigationLink {
+                            InsightsView(shifts: shifts)
+                        } label: {
+                            Label("Best times to drive", systemImage: "chart.bar.xaxis")
+                        }
+                    }
+
                     Section("By platform") {
                         ForEach(platformGroups) { group in
                             TotalsRow(title: group.key, totals: Totals(group.shifts))
@@ -89,6 +98,13 @@ struct SummaryView: View {
                 }
 
                 Section {
+                    if let reportURL {
+                        ShareLink(item: reportURL) {
+                            Label("Share PDF report", systemImage: "doc.richtext")
+                        }
+                    } else {
+                        Button("Create year-end PDF report", systemImage: "doc.richtext", action: makeReport)
+                    }
                     ShareLink(item: CSVFile(name: "mileage-log-\(year).csv",
                                             text: CSVExport.make(shifts: shifts, expenses: expenses, rates: rates)),
                               preview: SharePreview("Mileage log \(String(year))")) {
@@ -99,11 +115,19 @@ struct SummaryView: View {
                 }
             }
             .navigationTitle("Taxes")
+            .onChange(of: year) { reportURL = nil }
+            .onAppear { reportURL = nil }   // rebuild so the report includes the latest shifts
             .sheet(item: $editingPayout) { target in
                 PayoutEditorView(year: year, platform: target.platform,
                                  existing: payout(for: target.platform))
             }
         }
+    }
+
+    private func makeReport() {
+        let data = ReportPDF.make(year: year, shifts: shifts, expenses: expenses,
+                                  payouts: payouts, rates: rates, setAsidePercent: setAsidePercent)
+        reportURL = ReportPDF.writeFile(year: year, data: data)
     }
 
     private func payout(for platform: String) -> PlatformPayout? {

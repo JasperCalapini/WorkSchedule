@@ -114,7 +114,7 @@ struct ShiftListView: View {
                         .foregroundStyle(RouteStyle.personal)
                 }
                 Button {
-                    active.isPersonal.toggle()
+                    ShiftControl.toggleErrand()
                 } label: {
                     Label(active.isPersonal ? "Back to work" : "Personal errand",
                           systemImage: active.isPersonal ? "car.fill" : "cart")
@@ -127,7 +127,7 @@ struct ShiftListView: View {
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
             Button("Discard shift", role: .destructive) {
-                tracker.stop()
+                ShiftControl.finished()
                 context.delete(active)
             }
             .frame(maxWidth: .infinity)
@@ -135,10 +135,7 @@ struct ShiftListView: View {
     }
 
     private func startShift() {
-        let shift = Shift(platform: startPlatform, odometerStart: parseNumber(startOdometer))
-        shift.odometerStartPhoto = startPhoto
-        context.insert(shift)
-        if useGPS { tracker.start(for: shift) }
+        ShiftControl.start(platform: startPlatform, odometer: parseNumber(startOdometer), photo: startPhoto)
         startOdometer = ""
         startPhoto = nil
     }
@@ -177,6 +174,7 @@ enum Period: String, CaseIterable, Identifiable {
 struct PeriodStatsView: View {
     let shifts: [Shift]
     @Binding var period: Period
+    @AppStorage("weeklyGoal") private var weeklyGoal = 0.0
 
     private var inPeriod: [Shift] {
         let component: Calendar.Component = period == .week ? .weekOfYear : .month
@@ -190,6 +188,16 @@ struct PeriodStatsView: View {
                 ForEach(Period.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
+            if period == .week && weeklyGoal > 0 {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: min(t.income, weeklyGoal), total: weeklyGoal)
+                        .tint(t.income >= weeklyGoal ? .green : .accentColor)
+                    Text(t.income >= weeklyGoal
+                         ? "Goal reached: \(t.income.currency) of \(weeklyGoal.currency)"
+                         : "\(t.income.currency) of \(weeklyGoal.currency) weekly goal")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
                     stat("Earned", t.income.currency)

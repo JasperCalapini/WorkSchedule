@@ -79,6 +79,7 @@ final class LocationTracker: NSObject, CLLocationManagerDelegate {
             }
             lastLocation = location
         }
+        LiveActivityController.update(for: shift)
     }
 
     private func record(_ location: CLLocation, personal: Bool) {
