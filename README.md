@@ -1,49 +1,76 @@
-# Gig Log (iPhone app)
+# Gig Log
 
-Native iOS app (SwiftUI + SwiftData) to record delivery gig shifts — DoorDash, Amazon Flex, Uber Eats, etc. — and business miles for taxes.
+An iPhone app for delivery drivers (DoorDash, Amazon Flex, Uber Eats, Grubhub, Instacart, Walmart Spark and others) to record **shifts, business miles, earnings and expenses** for taxes.
+
+Start a shift, drive, end the shift. Gig Log tracks your miles with GPS, keeps a mileage log the IRS accepts, and shows how much to set aside for taxes.
+
+> Gig Log helps you keep records. It is **not tax advice**. Check with a tax professional for your situation.
 
 ## Features
-- **Start / end a shift** with one tap; live timer while you drive.
-- **GPS mileage tracking** during a shift, even while you use DoorDash/Flex in the foreground. Counts all miles while working, not just the platform's "active" miles.
-- **Route map** — see where you drove on each GPS-tracked shift (can be turned off in Settings).
-- **Personal errand mode** — tap during a shift; GPS keeps recording but those miles count as personal and show as a dashed orange line on the map.
-- **Odometer backup + photos** — start/end odometer readings and photos as proof.
-- **Commute miles** logged separately from business miles (not deducted).
-- **This week / this month** stats: earnings, hours, miles, $/hour, $/mile.
-- **Expenses** — parking, tolls, phone share, supplies — with receipt photos.
-- **Taxes tab** per year: income, mileage deduction, expenses, profit, and a **set-aside-for-taxes** estimate (% adjustable in Settings).
-- **Platform payouts** — enter each app's 1099 / annual total and compare with your log.
-- **CSV export** of shifts and expenses via the share sheet.
-- **Lock Screen & Dynamic Island** — shift timer, business/personal miles and an Errand / Back-to-work button without opening the app.
-- **Shortcuts** — "Start Shift" action, e.g. to start automatically when you open DoorDash (see below).
+
+**Tracking**
+- One-tap **start / end shift** with a live timer.
+- **GPS mileage tracking** that keeps running while you use DoorDash or Flex. It counts all miles while working, not just the platform's "active" miles.
+- **Personal errand mode**: during a shift, miles are recorded but counted as personal, not business.
+- **Route map** of every shift. Business driving shows as a solid line, personal driving as a dashed orange line.
+- **Odometer readings and photos** at the start and end of a shift, as backup proof.
+- **Lock Screen and Dynamic Island**: timer, miles and the Errand / Back-to-work button without opening the app.
+- **Shortcuts**: start a shift automatically when you open DoorDash or Flex.
+
+**Money and taxes**
+- **Earnings and tips** per shift.
+- **Expenses**: parking, tolls, phone share, supplies, each with an optional receipt photo.
+- **Taxes tab**: income, mileage deduction (IRS standard rate by date), expenses, profit, and a **set-aside-for-taxes** estimate.
+- **Platform payouts**: compare each app's 1099 total with your own log.
+- **Year-end PDF report** and **CSV export** for you or your tax preparer.
+
+**Insights**
+- **This week / this month**: earnings, hours, miles, $/hour, $/mile.
 - **Weekly earnings goal** with a progress bar.
-- **Best times to drive** — $/hour by day, time of day and platform.
-- **Year-end PDF report** for you or your tax preparer.
-- **Backup & restore** — everything in one file, for a new phone.
-- **Face ID lock** (optional).
-- **Dark mode** (follows the iPhone setting).
+- **Best times to drive**: $/hour by day of week, time of day and platform.
 
-## Install on your iPhone
-Requires a Mac with **Xcode 16 or newer** (free from the Mac App Store). iPhone must run iOS 17+.
+**Privacy and safety**
+- All data stays **on your iPhone**. No account, no server, no iCloud sync.
+- **Backup and restore** to a single file.
+- Optional **Face ID lock**.
+- **Dark mode**.
 
-1. Clone this repo on your Mac and open `GigLog.xcodeproj`.
-2. Xcode → Settings → Accounts → sign in with your Apple ID.
-3. Select the **GigLog** target → *Signing & Capabilities* → pick your Team. Do the same for the **GigLogWidgets** target (the Lock Screen display).
-   If Xcode says the bundle ID is taken: click the blue **GigLog** project icon → **Build Settings** → search `APP_BUNDLE_IDENTIFIER` → change it (e.g. `com.yourname.giglog`). Both targets use it.
-4. Plug in your iPhone, select it as the run destination, press **Run** (▶).
-5. On the iPhone: Settings → General → VPN & Device Management → trust your developer certificate. On iOS 16+, also enable Settings → Privacy & Security → **Developer Mode**.
+## Requirements
 
-With a free Apple ID the app must be re-installed from Xcode every 7 days. A paid Apple Developer account ($99/yr) removes that limit and lets you use TestFlight or the App Store.
+- iPhone with **iOS 17** or later
+- A Mac with **Xcode 16** or later (free on the Mac App Store)
+- An Apple ID (free works; see [Installation](docs/INSTALL.md#free-vs-paid-apple-developer-account))
 
-## Start a shift automatically when you open DoorDash
-1. Open the **Shortcuts** app → **Automation** → **+** → **App**.
-2. Choose **DoorDash** (or Amazon Flex), tick **Is Opened**, set **Run Immediately**, tap **Next**.
-3. Add the action **Start Shift** (Gig Log) and set Platform to `DoorDash`.
+## Quick start
 
-When you open DoorDash, Gig Log briefly opens to start the shift (iPhone requires this to begin GPS tracking), then tap **◀ DoorDash** at the top-left to go back. If a shift is already running, nothing changes.
+1. Clone the repo and open `GigLog.xcodeproj` in Xcode.
+2. Choose your Team under **Signing & Capabilities** for both targets, **GigLog** and **GigLogWidgets**.
+3. Plug in your iPhone, select it, and press **Run** (▶).
 
-## Notes
-- IRS rates are stored by effective date (2026 changed mid-year: 72.5¢ Jan–Jun, 76¢ Jul–Dec). Verify at irs.gov and edit in Settings.
-- GPS: allow location access when asked. A blue location pill shows while tracking; it stops when you end the shift.
-- Photos are stored inside the app (not your Photos library), shrunk to ~200–300 KB each. Data stays on your iPhone and is included in your normal iPhone/iCloud backup.
-- Not tax advice.
+Full steps and troubleshooting: **[docs/INSTALL.md](docs/INSTALL.md)**
+
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| [Installation](docs/INSTALL.md) | Putting the app on your iPhone, signing, Shortcuts automation, troubleshooting |
+| [User guide](docs/USER_GUIDE.md) | How to use every screen and feature |
+| [Tax guide](docs/TAX_GUIDE.md) | How delivery gig taxes work and how Gig Log's numbers map to your tax return |
+| [Privacy](docs/PRIVACY.md) | What data is stored, where, and which permissions are used |
+| [Architecture](docs/ARCHITECTURE.md) | Code structure and design notes for developers |
+| [Changelog](CHANGELOG.md) | What changed in each version |
+
+## Project layout
+
+```
+GigLog/              App source (SwiftUI + SwiftData)
+GigLogWidgets/       Lock Screen / Dynamic Island widget extension
+Shared/              Code compiled into both the app and the widget
+GigLog.xcodeproj     Xcode project
+Info.plist           App Info.plist additions (background location, Live Activities)
+docs/                Documentation
+```
+
+## License
+
+Personal project. No license has been chosen yet; all rights reserved by the author.
