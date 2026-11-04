@@ -18,6 +18,13 @@
 			remoteGlobalIDString = A10000000000000000000023;
 			remoteInfo = GigLogWidgets;
 		};
+		A10000000000000000000050 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000009 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000006;
+			remoteInfo = GigLog;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +44,7 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* GigLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GigLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000020 /* GigLogWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GigLogWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000040 /* GigLogTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GigLogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,6 +61,11 @@
 		A10000000000000000000022 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000041 /* GigLogTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GigLogTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +85,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000044 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +101,7 @@
 				A10000000000000000000002 /* GigLog */,
 				A10000000000000000000021 /* GigLogWidgets */,
 				A10000000000000000000022 /* Shared */,
+				A10000000000000000000041 /* GigLogTests */,
 				A10000000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +111,7 @@
 			children = (
 				A10000000000000000000001 /* GigLog.app */,
 				A10000000000000000000020 /* GigLogWidgets.appex */,
+				A10000000000000000000040 /* GigLogTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,6 +163,27 @@
 			productReference = A10000000000000000000020 /* GigLogWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A10000000000000000000042 /* GigLogTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000046 /* Build configuration list for PBXNativeTarget "GigLogTests" */;
+			buildPhases = (
+				A10000000000000000000043 /* Sources */,
+				A10000000000000000000044 /* Frameworks */,
+				A10000000000000000000045 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000049 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000041 /* GigLogTests */,
+			);
+			name = GigLogTests;
+			productName = GigLogTests;
+			productReference = A10000000000000000000040 /* GigLogTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -156,6 +199,10 @@
 					};
 					A10000000000000000000023 = {
 						CreatedOnToolsVersion = 16.0;
+					};
+					A10000000000000000000042 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A10000000000000000000006;
 					};
 				};
 			};
@@ -175,6 +222,7 @@
 			targets = (
 				A10000000000000000000006 /* GigLog */,
 				A10000000000000000000023 /* GigLogWidgets */,
+				A10000000000000000000042 /* GigLogTests */,
 			);
 		};
 /* End PBXProject section */
@@ -188,6 +236,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000026 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000045 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -211,6 +266,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -218,6 +280,11 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000023 /* GigLogWidgets */;
 			targetProxy = A10000000000000000000033 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000049 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000006 /* GigLog */;
+			targetProxy = A10000000000000000000050 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -227,6 +294,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				APP_BUNDLE_IDENTIFIER = com.jaspercalapini.giglog;
+				VERSIONING_SYSTEM = "apple-generic";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -255,6 +323,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				APP_BUNDLE_IDENTIFIER = com.jaspercalapini.giglog;
+				VERSIONING_SYSTEM = "apple-generic";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -292,7 +361,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -323,7 +392,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -345,7 +414,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -368,13 +437,47 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A10000000000000000000047 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GigLog.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GigLog";
+			};
+			name = Debug;
+		};
+		A10000000000000000000048 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GigLog.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GigLog";
 			};
 			name = Release;
 		};
@@ -404,6 +507,15 @@
 			buildConfigurations = (
 				A10000000000000000000028 /* Debug */,
 				A10000000000000000000029 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000046 /* Build configuration list for PBXNativeTarget "GigLogTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000047 /* Debug */,
+				A10000000000000000000048 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

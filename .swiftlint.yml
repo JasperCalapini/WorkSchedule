@@ -1,0 +1,59 @@
+# SwiftLint settings. Run with scripts/lint.sh (install once: brew install swiftlint).
+included:
+  - GigLog
+  - GigLogWidgets
+  - Shared
+  - GigLogTests
+excluded:
+  - DerivedData
+  - build
+
+opt_in_rules:
+  - closure_spacing
+  - empty_count
+  - empty_string
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - last_where
+  - modifier_order
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - vertical_whitespace_closing_braces
+
+disabled_rules:
+  - todo
+  - trailing_comma            # trailing commas keep diffs small
+  - multiple_closures_with_trailing_closure   # common in SwiftUI (Button, Section)
+
+line_length:
+  warning: 160
+  error: 220
+  ignores_comments: true
+  ignores_urls: true
+  ignores_interpolated_strings: true
+
+identifier_name:
+  min_length: 1               # i, x, y, s, e, r are clear in short closures
+  excluded: [id]
+
+type_name:
+  max_length: 50
+
+function_body_length:
+  warning: 80
+  error: 150
+
+type_body_length:
+  warning: 400
+  error: 600
+
+file_length:
+  warning: 500
+  error: 800
+
+cyclomatic_complexity:
+  warning: 15
+

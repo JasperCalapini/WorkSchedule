@@ -3,3 +3,7 @@ xcuserdata/
 DerivedData/
 build/
 *.xcuserstate
+*.xcresult
+*.ipa
+*.dSYM.zip
+.build/
