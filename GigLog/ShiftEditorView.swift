@@ -26,20 +26,19 @@ struct ShiftEditorView: View {
 
     init(shift: Shift?) {
         self.shift = shift
-        let text: (Double?) -> String = { $0.map { String($0) } ?? "" }
-        let money: (Double?) -> String = { ($0 ?? 0) == 0 ? "" : String($0!) }
+        let text: (Double?) -> String = { $0?.fieldText ?? "" }
         _platform = State(initialValue: shift?.platform ?? "")
         _start = State(initialValue: shift?.start ?? Date.now.addingTimeInterval(-3600))
         _end = State(initialValue: shift?.end ?? .now)
         _odometerStart = State(initialValue: text(shift?.odometerStart))
         _odometerEnd = State(initialValue: text(shift?.odometerEnd))
         // When ending a GPS-tracked shift, start with the GPS miles.
-        let gps = shift?.gpsMiles.map { ($0 * 10).rounded() / 10 }
+        let gps = shift?.gpsMiles?.roundedToTenth
         let initialMiles = shift?.isActive == true ? gps : shift?.miles
-        _miles = State(initialValue: (initialMiles ?? 0) == 0 ? "" : text(initialMiles))
+        _miles = State(initialValue: text(initialMiles))
         // When ending, personal-mode GPS miles become the commute / personal miles.
         let personal = shift?.isActive == true
-            ? ((shift?.personalGPSMiles ?? 0) * 10).rounded() / 10
+            ? (shift?.personalGPSMiles ?? 0).roundedToTenth
             : (shift?.commuteMiles ?? 0)
         _commute = State(initialValue: personal.fieldText)
         _totalDriven = State(initialValue: shift?.isActive == true
@@ -47,8 +46,8 @@ struct ShiftEditorView: View {
             : shift.map { $0.miles + $0.commuteMiles })
         _startPhoto = State(initialValue: shift?.odometerStartPhoto)
         _endPhoto = State(initialValue: shift?.odometerEndPhoto)
-        _earnings = State(initialValue: money(shift?.earnings))
-        _tips = State(initialValue: money(shift?.tips))
+        _earnings = State(initialValue: text(shift?.earnings))
+        _tips = State(initialValue: text(shift?.tips))
         _notes = State(initialValue: shift?.notes ?? "")
     }
 
@@ -75,6 +74,12 @@ struct ShiftEditorView: View {
                     }
                 }
                 Section {
+                    if shift?.gpsInterrupted == true {
+                        Label("GPS tracking was interrupted during this shift (the app was closed), so GPS miles may be too low. Enter both odometer readings for an accurate total.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                     numberField("Start odometer", $odometerStart)
                     numberField("End odometer", $odometerEnd)
                     if let gps = shift?.gpsMiles {
@@ -82,7 +87,7 @@ struct ShiftEditorView: View {
                             Button("\(gps.oneDecimal) – use") {
                                 let personal = shift?.personalGPSMiles ?? 0
                                 totalDriven = gps + personal
-                                commute = ((personal * 10).rounded() / 10).fieldText
+                                commute = personal.roundedToTenth.fieldText
                                 recompute()
                             }
                         }
@@ -146,7 +151,7 @@ struct ShiftEditorView: View {
     private func recompute() {
         guard let total = totalDriven else { return }
         let business = max(0, total - (parseNumber(commute) ?? 0))
-        miles = String((business * 10).rounded() / 10)
+        miles = business.roundedToTenth.fieldText
     }
 
     private func save() {
@@ -157,16 +162,20 @@ struct ShiftEditorView: View {
         target.end = end
         target.odometerStart = parseNumber(odometerStart)
         target.odometerEnd = parseNumber(odometerEnd)
-        target.miles = parseNumber(miles) ?? 0
-        target.commuteMiles = parseNumber(commute) ?? 0
+        target.miles = max(0, parseNumber(miles) ?? 0)
+        target.commuteMiles = max(0, parseNumber(commute) ?? 0)
         target.isPersonal = false
         target.odometerStartPhoto = startPhoto
         target.odometerEndPhoto = endPhoto
-        target.earnings = parseNumber(earnings) ?? 0
-        target.tips = parseNumber(tips) ?? 0
+        target.earnings = max(0, parseNumber(earnings) ?? 0).roundedToCents
+        target.tips = max(0, parseNumber(tips) ?? 0).roundedToCents
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         if shift == nil { context.insert(target) }
-        if wasActive { ShiftControl.finished() }
+        if wasActive {
+            ShiftControl.finished()
+        } else {
+            AppData.save("save shift")
+        }
         dismiss()
     }
 }

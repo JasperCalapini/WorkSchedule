@@ -1,9 +1,11 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var context
-    @AppStorage("didSeed") private var didSeed = false
+    @AppStorage(SettingsKey.didSeed) private var didSeed = false
+    @AppStorage(SettingsKey.didBackfillRouteCounts) private var didBackfillRouteCounts = false
+    @AppStorage(SettingsKey.didBackfillReceipts) private var didBackfillReceipts = false
 
     var body: some View {
         TabView {
@@ -21,20 +23,17 @@ struct ContentView: View {
                 Defaults.seed(context)
                 didSeed = true
             }
-            resumeGPSIfNeeded()
+            if !didBackfillRouteCounts {
+                Maintenance.backfillRouteCounts(context)
+                didBackfillRouteCounts = true
+            }
+            if !didBackfillReceipts {
+                Maintenance.backfillReceiptFlags(context)
+                didBackfillReceipts = true
+            }
+            // Also runs at launch; repeating it here starts the Lock Screen display,
+            // which iOS only allows while the app is on screen.
+            ShiftControl.resumeIfNeeded()
         }
-    }
-
-    /// If the app was closed during a shift, keep tracking and the Lock Screen display going.
-    private func resumeGPSIfNeeded() {
-        guard let active = AppData.activeShift() else {
-            LiveActivityController.end()   // clean up a stale Lock Screen display
-            return
-        }
-        let tracker = LocationTracker.shared
-        if !tracker.isTracking && active.gpsMiles != nil {
-            tracker.start(for: active)
-        }
-        LiveActivityController.start(for: active)
     }
 }

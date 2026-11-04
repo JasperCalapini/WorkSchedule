@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 // Every property has a default value (or is optional) so new fields can be added
-// later without breaking existing data.
+// later with a lightweight migration. See `GigLogSchemaV1` / `GigLogMigrationPlan`.
 
 @Model
 final class Shift {
@@ -25,6 +25,11 @@ final class Shift {
     var personalGPSMiles: Double = 0
     /// True while the driver has switched to personal mode during the shift.
     var isPersonal: Bool = false
+    /// True if GPS tracking stopped for a while during the shift (e.g. the app was closed),
+    /// so GPS miles may be low and the odometer should be used.
+    var gpsInterrupted: Bool = false
+    /// Number of points in `routeData`; lets lists check for a route without loading it.
+    var routePointCount: Int = 0
     @Attribute(.externalStorage) var odometerStartPhoto: Data?
     @Attribute(.externalStorage) var odometerEndPhoto: Data?
     /// GPS route recorded during the shift (see RoutePoint.encode).
@@ -60,6 +65,9 @@ final class Expense {
     var category: String = ExpenseCategory.other.rawValue
     var amount: Double = 0
     var note: String = ""
+    /// Mirrors `receiptPhoto != nil`, so lists and exports don't load every photo into memory
+    /// just to show "Receipt". Always change the photo through `setReceipt(_:)`.
+    var hasReceipt: Bool = false
     @Attribute(.externalStorage) var receiptPhoto: Data?
 
     init(date: Date = .now, category: ExpenseCategory = .other, amount: Double = 0, note: String = "") {
@@ -71,6 +79,11 @@ final class Expense {
 
     var year: Int { Calendar.current.component(.year, from: date) }
     var kind: ExpenseCategory { ExpenseCategory(rawValue: category) ?? .other }
+
+    func setReceipt(_ photo: Data?) {
+        receiptPhoto = photo
+        hasReceipt = photo != nil
+    }
 }
 
 enum ExpenseCategory: String, CaseIterable, Identifiable {
@@ -129,6 +142,43 @@ final class MileageRate {
     }
 }
 
+// MARK: - Schema versions
+
+/// The first released data model. When a model changes in a way SwiftData can't migrate
+/// on its own (renaming or changing a property's type), add `GigLogSchemaV2` with copies
+/// of the changed models and a `MigrationStage` below. Adding a property with a default
+/// value needs no new version.
+enum GigLogSchemaV1: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
+    static var models: [any PersistentModel.Type] {
+        [Shift.self, Expense.self, PlatformPayout.self, Platform.self, MileageRate.self]
+    }
+}
+
+enum GigLogMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] { [GigLogSchemaV1.self] }
+    static var stages: [MigrationStage] { [] }
+}
+
+// MARK: - Settings
+
+/// Keys for settings stored in UserDefaults (`@AppStorage`). Use these instead of string literals.
+enum SettingsKey {
+    static let didSeed = "didSeed"
+    static let useGPS = "useGPS"
+    static let recordRoute = "recordRoute"
+    static let setAsidePercent = "setAsidePercent"
+    static let weeklyGoal = "weeklyGoal"
+    static let requireFaceID = "requireFaceID"
+    static let didBackfillRouteCounts = "didBackfillRouteCounts"
+    static let didBackfillReceipts = "didBackfillReceipts"
+
+    /// A Bool setting that defaults to `true` when it has never been set.
+    static func flag(_ key: String, defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: key) as? Bool ?? true
+    }
+}
+
 enum Defaults {
     static let platforms = ["DoorDash", "Amazon Flex", "Uber Eats", "Grubhub", "Instacart", "Walmart Spark"]
     // Verify at irs.gov; editable in Settings. 2026 changed mid-year.
@@ -154,28 +204,80 @@ enum Defaults {
     }
 }
 
+enum Maintenance {
+    /// Fills in `routePointCount` for shifts recorded before that field existed (runs once).
+    static func backfillRouteCounts(_ context: ModelContext) {
+        let shifts = (try? context.fetch(FetchDescriptor<Shift>(predicate: #Predicate<Shift> { $0.routePointCount == 0 }))) ?? []
+        for shift in shifts where shift.routeData != nil {
+            shift.routePointCount = RoutePoint.count(in: shift.routeData)
+        }
+    }
+
+    /// Fills in `Expense.hasReceipt` for expenses saved before that field existed (runs once).
+    static func backfillReceiptFlags(_ context: ModelContext) {
+        let expenses = (try? context.fetch(FetchDescriptor<Expense>(predicate: #Predicate<Expense> { !$0.hasReceipt }))) ?? []
+        for expense in expenses where expense.receiptPhoto != nil {
+            expense.hasReceipt = true
+        }
+    }
+}
+
+// MARK: - Calculations
+
 /// Platform names in order, without duplicates.
 func uniqueNames(_ platforms: [Platform]) -> [String] {
     var seen = Set<String>()
     return platforms.map(\.name).filter { seen.insert($0).inserted }
 }
 
-/// The rate in effect on the given date.
+/// The rate in effect on the given date, or nil if no rate covers it.
+func mileageRateIfKnown(on date: Date, in rates: [MileageRate]) -> Double? {
+    rates.filter { $0.effectiveFrom <= date }.max { $0.effectiveFrom < $1.effectiveFrom }?.rate
+}
+
+/// The rate in effect on the given date (0 if none is set — see `shiftsWithoutRate`).
 func mileageRate(on date: Date, in rates: [MileageRate]) -> Double {
-    rates.filter { $0.effectiveFrom <= date }.max { $0.effectiveFrom < $1.effectiveFrom }?.rate ?? 0
+    mileageRateIfKnown(on: date, in: rates) ?? 0
 }
 
 func mileageDeduction(_ shifts: [Shift], rates: [MileageRate]) -> Double {
-    shifts.reduce(0) { $0 + $1.miles * mileageRate(on: $1.start, in: rates) }
+    shifts.reduce(0) { $0 + ($1.miles * mileageRate(on: $1.start, in: rates)).roundedToCents }
 }
 
-func parseNumber(_ text: String) -> Double? {
-    Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
+/// Shifts with business miles but no IRS rate for their date, so they'd add $0 to the deduction.
+func shiftsWithoutRate(_ shifts: [Shift], rates: [MileageRate]) -> [Shift] {
+    shifts.filter { $0.miles > 0 && mileageRateIfKnown(on: $0.start, in: rates) == nil }
+}
+
+// MARK: - Numbers
+
+/// Reads a number typed or pasted by the user, following their region's format
+/// ("1,206.25" in the US, "1.206,25" in Germany). Ignores a leading currency symbol.
+func parseNumber(_ text: String, locale: Locale = .current) -> Double? {
+    var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    for symbol in Set([locale.currencySymbol ?? "$", "$"]) {
+        cleaned = cleaned.replacingOccurrences(of: symbol, with: "")
+    }
+    cleaned = cleaned.trimmingCharacters(in: .whitespaces)
+    guard !cleaned.isEmpty else { return nil }
+
+    let formatter = NumberFormatter()
+    formatter.locale = locale
+    formatter.numberStyle = .decimal
+    if let number = formatter.number(from: cleaned) {
+        return number.doubleValue
+    }
+    // Fall back to a plain "1234.5" style number.
+    return Double(cleaned)
 }
 
 extension Double {
     var currency: String { formatted(.currency(code: "USD")) }
     var oneDecimal: String { formatted(.number.precision(.fractionLength(1))) }
-    /// Text for an editable field: empty when zero.
-    var fieldText: String { self == 0 ? "" : String(self) }
+    var roundedToTenth: Double { (self * 10).rounded() / 10 }
+    var roundedToCents: Double { (self * 100).rounded() / 100 }
+    /// Text for an editable field in the user's number format; empty when zero.
+    var fieldText: String {
+        self == 0 ? "" : formatted(.number.grouping(.never).precision(.fractionLength(0...2)))
+    }
 }

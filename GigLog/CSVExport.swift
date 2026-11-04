@@ -1,6 +1,4 @@
 import Foundation
-import CoreTransferable
-import UniformTypeIdentifiers
 
 enum CSVExport {
     static func make(shifts: [Shift], expenses: [Expense], rates: [MileageRate]) -> String {
@@ -35,7 +33,7 @@ enum CSVExport {
         rows.append(["Date", "Category", "Amount", "Note", "Receipt"])
         for e in expenses.sorted(by: { $0.date < $1.date }) {
             rows.append([date.string(from: e.date), e.category, money(e.amount), e.note,
-                         e.receiptPhoto == nil ? "" : "Yes (in app)"])
+                         e.hasReceipt ? "Yes (in app)" : ""])
         }
         rows.append(["TOTAL", "", money(expenses.reduce(0) { $0 + $1.amount })])
         return rows.map { $0.map(escape).joined(separator: ",") }.joined(separator: "\n")
@@ -48,20 +46,13 @@ enum CSVExport {
         return f
     }
 
-    private static func escape(_ field: String) -> String {
-        "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
-    }
-}
-
-struct CSVFile: Transferable {
-    let name: String
-    let text: String
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .commaSeparatedText) { file in
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(file.name)
-            try file.text.write(to: url, atomically: true, encoding: .utf8)
-            return SentTransferredFile(url)
+    /// Quotes a field for CSV. Text starting with `=`, `+`, `-`, `@`, tab or return is prefixed
+    /// with `'` so spreadsheet apps show it as text instead of running it as a formula.
+    static func escape(_ field: String) -> String {
+        var value = field
+        if let first = value.unicodeScalars.first, "=+-@\t\r".unicodeScalars.contains(first) {
+            value = "'" + value
         }
+        return "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
     }
 }

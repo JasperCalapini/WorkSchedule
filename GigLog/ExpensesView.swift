@@ -79,7 +79,7 @@ struct ExpenseRow: View {
                 Text(expense.category).font(.headline)
                 Text([expense.date.formatted(date: .abbreviated, time: .omitted),
                       expense.note.isEmpty ? nil : expense.note,
-                      expense.receiptPhoto == nil ? nil : "Receipt"]
+                      expense.hasReceipt ? "Receipt" : nil]
                         .compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -149,10 +149,11 @@ struct ExpenseEditorView: View {
         let target = expense ?? Expense()
         target.date = date
         target.category = category.rawValue
-        target.amount = parseNumber(amount) ?? 0
+        target.amount = max(0, parseNumber(amount) ?? 0).roundedToCents
         target.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        target.receiptPhoto = receipt
+        target.setReceipt(receipt)
         if expense == nil { context.insert(target) }
+        AppData.save("save expense")
         dismiss()
     }
 }

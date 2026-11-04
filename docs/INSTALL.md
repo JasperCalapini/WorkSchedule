@@ -33,6 +33,7 @@ The project has two targets: the app (**GigLog**) and the Lock Screen display (*
 1. Click the blue **GigLog** project icon at the top of the left sidebar.
 2. Select the **GigLog** target → **Signing & Capabilities** → choose your **Team**.
 3. Select the **GigLogWidgets** target → **Signing & Capabilities** → choose the same **Team**.
+4. To run the tests on your iPhone (optional), do the same for **GigLogTests**. In the simulator, the tests need no signing.
 
 **If Xcode says the bundle identifier is not available:**
 
@@ -84,6 +85,10 @@ With a free account, connect the phone and press **Run** again once a week. **Yo
 When you open DoorDash, Gig Log opens for a moment to start the shift; the iPhone only lets GPS tracking start while the app is open. Tap **◀ DoorDash** at the top-left to go back. If a shift is already running, nothing changes.
 
 You can also say **"Hey Siri, start a shift in Gig Log"**.
+
+## Run the tests
+
+In Xcode choose an iPhone simulator, then **Product → Test** (⌘U). Results appear in the Test navigator (⌘6).
 
 ## Troubleshooting
 

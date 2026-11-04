@@ -7,10 +7,11 @@ struct SummaryView: View {
     @Query private var allExpenses: [Expense]
     @Query private var payouts: [PlatformPayout]
     @Query private var rates: [MileageRate]
-    @AppStorage("setAsidePercent") private var setAsidePercent = Defaults.setAsidePercent
+    @AppStorage(SettingsKey.setAsidePercent) private var setAsidePercent = Defaults.setAsidePercent
     @State private var year = Calendar.current.component(.year, from: .now)
     @State private var editingPayout: PayoutTarget?
     @State private var reportURL: URL?
+    @State private var csvURL: URL?
 
     private var shifts: [Shift] { allShifts.filter { !$0.isActive && $0.year == year } }
     private var expenses: [Expense] { allExpenses.filter { $0.year == year } }
@@ -61,7 +62,15 @@ struct SummaryView: View {
                 } header: {
                     Text("\(String(year)) totals")
                 } footer: {
-                    Text("Each shift uses the IRS rate in effect on its date (see Settings).")
+                    let missing = shiftsWithoutRate(shifts, rates: rates).count
+                    VStack(alignment: .leading, spacing: 4) {
+                        if missing > 0 {
+                            Label("\(missing) shift(s) have no IRS mileage rate for their date, so they add $0. Add the rate in Settings.",
+                                  systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                        }
+                        Text("Each shift uses the IRS rate in effect on its date (see Settings).")
+                    }
                 }
 
                 let platformGroups = groups { $0.platform }
@@ -105,22 +114,38 @@ struct SummaryView: View {
                     } else {
                         Button("Create year-end PDF report", systemImage: "doc.richtext", action: makeReport)
                     }
-                    ShareLink(item: CSVFile(name: "mileage-log-\(year).csv",
-                                            text: CSVExport.make(shifts: shifts, expenses: expenses, rates: rates)),
-                              preview: SharePreview("Mileage log \(String(year))")) {
-                        Label("Export CSV for taxes", systemImage: "square.and.arrow.up")
+                    if let csvURL {
+                        ShareLink(item: csvURL) {
+                            Label("Share CSV", systemImage: "square.and.arrow.up")
+                        }
+                    } else {
+                        Button("Create CSV for taxes", systemImage: "tablecells", action: makeCSV)
                     }
                 } footer: {
                     Text("The IRS expects date, miles and business purpose for each trip. Keep this log with your tax records. Not tax advice.")
                 }
             }
             .navigationTitle("Taxes")
-            .onChange(of: year) { reportURL = nil }
-            .onAppear { reportURL = nil }   // rebuild so the report includes the latest shifts
+            .onChange(of: year, clearExports)
+            .onAppear(perform: clearExports)   // rebuild so exports include the latest shifts
             .sheet(item: $editingPayout) { target in
                 PayoutEditorView(year: year, platform: target.platform,
                                  existing: payout(for: target.platform))
             }
+        }
+    }
+
+    private func clearExports() {
+        reportURL = nil
+        csvURL = nil
+    }
+
+    private func makeCSV() {
+        let text = CSVExport.make(shifts: shifts, expenses: expenses, rates: rates)
+        do {
+            csvURL = try ExportFiles.write(Data(text.utf8), named: "mileage-log-\(year).csv")
+        } catch {
+            Log.export.error("CSV not written: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -218,12 +243,13 @@ struct PayoutEditorView: View {
     }
 
     private func save() {
-        let value = parseNumber(amount) ?? 0
+        let value = max(0, parseNumber(amount) ?? 0).roundedToCents
         if let existing {
             existing.amount = value
         } else {
             context.insert(PlatformPayout(year: year, platform: platform, amount: value))
         }
+        AppData.save("save payout")
         dismiss()
     }
 }

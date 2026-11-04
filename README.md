@@ -31,8 +31,8 @@ Start a shift, drive, end the shift. Gig Log tracks your miles with GPS, keeps a
 
 **Privacy and safety**
 - All data stays **on your iPhone**. No account, no server, no iCloud sync.
-- **Backup and restore** to a single file.
-- Optional **Face ID lock**.
+- **Encrypted backup and restore** to a single password-protected file.
+- Optional **Face ID lock**, and the app is always hidden in the app switcher.
 - **Dark mode**.
 
 ## Requirements
@@ -63,14 +63,26 @@ Full steps and troubleshooting: **[docs/INSTALL.md](docs/INSTALL.md)**
 ## Project layout
 
 ```
-GigLog/              App source (SwiftUI + SwiftData)
+GigLog/              App source (SwiftUI + SwiftData), app icon, privacy manifest
 GigLogWidgets/       Lock Screen / Dynamic Island widget extension
 Shared/              Code compiled into both the app and the widget
-GigLog.xcodeproj     Xcode project
+GigLogTests/         Unit tests (Swift Testing)
+GigLog.xcodeproj     Xcode project and shared scheme
 Info.plist           App Info.plist additions (background location, Live Activities)
+scripts/             bump-version.sh, lint.sh
 docs/                Documentation
 ```
 
+## Development
+
+| Task | How |
+|---|---|
+| Run the tests | Xcode: **Product → Test** (⌘U) |
+| Lint | `brew install swiftlint` once, then `scripts/lint.sh` |
+| New version | `scripts/bump-version.sh patch` (or `minor`, `major`, `build`), then add a section to [CHANGELOG.md](CHANGELOG.md) |
+
+The current version is shown in the app under **Settings → About**. Versions follow [semantic versioning](https://semver.org): `major.minor.patch`.
+
 ## License
 
-Personal project. No license has been chosen yet; all rights reserved by the author.
+Copyright © 2026 Jasper Calapini. **All rights reserved.** See [LICENSE](LICENSE). The code is not open source: it may not be copied, modified or redistributed without written permission.
