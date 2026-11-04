@@ -59,6 +59,30 @@ struct RoutePoint {
         }
         return points
     }
+
+    /// Number of points stored in route data.
+    static func count(in data: Data?) -> Int { (data?.count ?? 0) / size }
+
+    /// The most recent point, read without decoding the whole route.
+    static func last(in data: Data?) -> RoutePoint? {
+        guard let data, data.count >= size else { return nil }
+        let start = (data.count / size - 1) * size
+        return decode(data.subdata(in: start..<(start + size))).first
+    }
+
+    /// Keeps at most `maxPoints` evenly spaced points (always the first and last), so map
+    /// previews stay fast on long shifts. Points where the mode changes are kept so
+    /// business and personal stretches still line up.
+    static func simplified(_ points: [RoutePoint], maxPoints: Int) -> [RoutePoint] {
+        guard points.count > maxPoints, maxPoints >= 2 else { return points }
+        let step = Double(points.count - 1) / Double(maxPoints - 1)
+        var keep = Set((0..<maxPoints).map { Int((Double($0) * step).rounded()) })
+        for i in 1..<points.count where points[i].isPersonal != points[i - 1].isPersonal {
+            keep.insert(i - 1)
+            keep.insert(i)
+        }
+        return keep.sorted().map { points[$0] }
+    }
 }
 
 /// A continuous stretch of the route driven in one mode.
@@ -90,7 +114,8 @@ struct RouteSegment: Identifiable {
 
 extension Shift {
     var route: [RoutePoint] { RoutePoint.decode(routeData) }
-    var hasRoute: Bool { (routeData?.count ?? 0) >= 64 }
+    /// Uses the stored count so lists don't load every shift's route data.
+    var hasRoute: Bool { routePointCount >= 2 }
 }
 
 enum RouteStyle {
@@ -133,7 +158,8 @@ struct RouteDetailView: View {
     let shift: Shift
 
     var body: some View {
-        let points = shift.route
+        // Thinned out so a long shift still draws quickly; 2,000 points is plenty at any zoom.
+        let points = RoutePoint.simplified(shift.route, maxPoints: 2_000)
         RouteMap(points: points)
             .ignoresSafeArea(edges: .bottom)
             .safeAreaInset(edge: .bottom) {
@@ -200,7 +226,7 @@ struct RoutePreviewLink: View {
         NavigationLink {
             RouteDetailView(shift: shift)
         } label: {
-            RouteMap(points: shift.route, interactive: false)
+            RouteMap(points: RoutePoint.simplified(shift.route, maxPoints: 300), interactive: false)
                 .frame(height: 160)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .allowsHitTesting(false)

@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 import UIKit
 
@@ -9,12 +10,15 @@ struct PhotoField: View {
 
     @State private var showingCamera = false
     @State private var showingFull = false
+    /// A small decoded copy for the row; decoding the full photo on every redraw would use
+    /// several MB of memory per photo.
+    @State private var thumbnail: UIImage?
 
     var body: some View {
         HStack(spacing: 12) {
-            if let data, let image = UIImage(data: data) {
+            if data != nil, let thumbnail {
                 Button { showingFull = true } label: {
-                    Image(uiImage: image)
+                    Image(uiImage: thumbnail)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 64, height: 64)
@@ -36,6 +40,9 @@ struct PhotoField: View {
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel(data == nil ? "Take \(title)" : "\(title) options")
+        }
+        .task(id: data) {
+            thumbnail = data.flatMap { UIImage.thumbnail(from: $0, maxPixelSize: 192) }
         }
         .fullScreenCover(isPresented: $showingCamera) {
             CameraPicker { image in data = image.compressedJPEG() }
@@ -89,6 +96,21 @@ struct CameraPicker: UIViewControllerRepresentable {
 }
 
 extension UIImage {
+    /// Decodes a downsized copy straight from the JPEG data, without decoding the full image first.
+    static func thumbnail(from data: Data, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: image)
+    }
+
     /// Shrinks to at most 1600 px on the long side and JPEG-compresses (~200–300 KB).
     func compressedJPEG(maxDimension: CGFloat = 1600) -> Data? {
         let scale = min(1, maxDimension / max(size.width, size.height))

@@ -5,7 +5,7 @@ struct ShiftListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Shift.start, order: .reverse) private var shifts: [Shift]
     @Query(sort: \Platform.sortOrder) private var platforms: [Platform]
-    @AppStorage("useGPS") private var useGPS = true
+    @AppStorage(SettingsKey.useGPS) private var useGPS = true
 
     @State private var startPlatform = ""
     @State private var startOdometer = ""
@@ -13,6 +13,7 @@ struct ShiftListView: View {
     @State private var period: Period = .week
     @State private var editing: Shift?
     @State private var addingNew = false
+    @State private var confirmingDiscard = false
     private var tracker: LocationTracker { .shared }
 
     private var activeShift: Shift? { shifts.first { $0.isActive } }
@@ -64,13 +65,12 @@ struct ShiftListView: View {
             .navigationTitle("Gig Log")
             .toolbar {
                 Button { addingNew = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Add a past shift")
             }
             .sheet(isPresented: $addingNew) { ShiftEditorView(shift: nil) }
             .sheet(item: $editing) { ShiftEditorView(shift: $0) }
-            .onAppear { if startPlatform.isEmpty { startPlatform = platforms.first?.name ?? "" } }
-            .onChange(of: platforms.count) {
-                if startPlatform.isEmpty { startPlatform = platforms.first?.name ?? "" }
-            }
+            .onAppear(perform: pickDefaultPlatform)
+            .onChange(of: platforms.count, pickDefaultPlatform)
         }
     }
 
@@ -97,6 +97,16 @@ struct ShiftListView: View {
             }
             if active.hasRoute {
                 RoutePreviewLink(shift: active)
+            }
+            if active.gpsMiles != nil && !tracker.isDenied {
+                Label("Keep Gig Log open in the background — don't swipe it away, or GPS stops counting.",
+                      systemImage: "info.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            if active.gpsInterrupted {
+                Label("GPS was interrupted during this shift. Enter your odometer when you end it.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote).foregroundStyle(.orange)
             }
             if active.gpsMiles != nil && tracker.isDenied {
                 VStack(alignment: .leading, spacing: 6) {
@@ -126,12 +136,20 @@ struct ShiftListView: View {
             Button("End shift") { editing = active }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
-            Button("Discard shift", role: .destructive) {
-                ShiftControl.finished()
-                context.delete(active)
-            }
-            .frame(maxWidth: .infinity)
+            Button("Discard shift", role: .destructive) { confirmingDiscard = true }
+                .frame(maxWidth: .infinity)
+                .confirmationDialog("Discard this shift?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                    Button("Discard shift", role: .destructive) { ShiftControl.discard(active) }
+                } message: {
+                    Text("Its miles, route and photos will be deleted. To keep it, tap End shift instead.")
+                }
         }
+    }
+
+    /// Selects the first platform, or a valid one if the selected platform was deleted.
+    private func pickDefaultPlatform() {
+        let names = uniqueNames(platforms)
+        if !names.contains(startPlatform) { startPlatform = names.first ?? "" }
     }
 
     private func startShift() {
@@ -174,7 +192,7 @@ enum Period: String, CaseIterable, Identifiable {
 struct PeriodStatsView: View {
     let shifts: [Shift]
     @Binding var period: Period
-    @AppStorage("weeklyGoal") private var weeklyGoal = 0.0
+    @AppStorage(SettingsKey.weeklyGoal) private var weeklyGoal = 0.0
 
     private var inPeriod: [Shift] {
         let component: Calendar.Component = period == .week ? .weekOfYear : .month

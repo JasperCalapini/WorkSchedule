@@ -33,15 +33,21 @@ struct ShiftLiveActivity: Widget {
                         .multilineTextAlignment(.trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        MilesView(state: context.state)
-                        Spacer()
-                        ErrandButton(isPersonal: context.state.isPersonal)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if context.isStale {
+                            Label("Not updating — open Gig Log", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption).foregroundStyle(.yellow)
+                        }
+                        HStack {
+                            MilesView(state: context.state)
+                            Spacer()
+                            ErrandButton(isPersonal: context.state.isPersonal)
+                        }
                     }
                 }
             } compactLeading: {
-                Image(systemName: modeSymbol(context.state))
-                    .foregroundStyle(context.state.isPersonal ? .orange : lightTeal)
+                Image(systemName: context.isStale ? "exclamationmark.triangle.fill" : modeSymbol(context.state))
+                    .foregroundStyle(context.isStale ? .yellow : (context.state.isPersonal ? .orange : lightTeal))
             } compactTrailing: {
                 Text(miles(context.state.businessMiles))
                     .monospacedDigit()
@@ -66,7 +72,10 @@ private struct LockScreenView: View {
                     .font(.title2.monospacedDigit().weight(.semibold))
                     .multilineTextAlignment(.trailing)
             }
-            if context.state.isPersonal {
+            if context.isStale {
+                Label("Not updating — open Gig Log to keep tracking", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption).foregroundStyle(.yellow)
+            } else if context.state.isPersonal {
                 Text("Personal errand — not counting as business")
                     .font(.caption).foregroundStyle(.orange)
             }

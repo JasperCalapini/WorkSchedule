@@ -17,7 +17,7 @@ enum ReportPDF {
             writer.begin(ctx)
             writer.title("Gig Log — \(year) Tax Report")
             writer.text("Generated \(Date.now.formatted(date: .long, time: .omitted)). Not tax advice.",
-                        font: .systemFont(ofSize: 10), color: .secondaryLabel)
+                        font: .systemFont(ofSize: 10), color: PageWriter.secondaryText)
             writer.space(12)
 
             writer.heading("Summary")
@@ -47,12 +47,12 @@ enum ReportPDF {
 
             writer.heading("Expenses")
             if expenses.isEmpty {
-                writer.text("None recorded.", font: .systemFont(ofSize: 10), color: .secondaryLabel)
+                writer.text("None recorded.", font: .systemFont(ofSize: 10), color: PageWriter.secondaryText)
             } else {
                 writer.row(["Date", "Category", "Note", "Amount"], header: true, columns: 4)
                 for e in expenses.sorted(by: { $0.date < $1.date }) {
                     writer.row([e.date.formatted(date: .numeric, time: .omitted), e.category,
-                                e.note + (e.receiptPhoto == nil ? "" : " (receipt)"), e.amount.currency], columns: 4)
+                                e.note + (e.hasReceipt ? " (receipt)" : ""), e.amount.currency], columns: 4)
                 }
                 writer.row(["", "", "Total", expenseTotal.currency], bold: true, columns: 4)
             }
@@ -72,13 +72,21 @@ enum ReportPDF {
             writer.row(["Total", "", "", t.hours.oneDecimal, t.miles.oneDecimal, personal.oneDecimal,
                         "", deduction.currency], bold: true, columns: 8)
             writer.text("Business purpose for all business miles: delivery driving for the listed platform.",
-                        font: .systemFont(ofSize: 9), color: .secondaryLabel)
+                        font: .systemFont(ofSize: 9), color: PageWriter.secondaryText)
+            let missing = shiftsWithoutRate(sortedShifts, rates: rates)
+            if !missing.isEmpty {
+                writer.text("Warning: \(missing.count) shift(s) have no IRS mileage rate for their date and add $0 to the deduction.",
+                            font: .boldSystemFont(ofSize: 9), color: .black)
+            }
         }
     }
 }
 
 /// Minimal top-to-bottom text layout that starts a new page when one fills up.
 private final class PageWriter {
+    /// Fixed colours: the page is always white, so dark-mode system colours would be unreadable.
+    static let secondaryText = UIColor(white: 0.35, alpha: 1)
+
     let page: CGRect
     let renderer: UIGraphicsPDFRenderer
     private let margin: CGFloat = 40
@@ -157,11 +165,10 @@ private final class PageWriter {
 extension ReportPDF {
     /// Writes the report to a temporary file for sharing.
     static func writeFile(year: Int, data: Data) -> URL? {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("gig-log-tax-report-\(year).pdf")
         do {
-            try data.write(to: url)
-            return url
+            return try ExportFiles.write(data, named: "gig-log-tax-report-\(year).pdf")
         } catch {
+            Log.export.error("PDF not written: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
